@@ -1,0 +1,50 @@
+name: Build Windows single-file EXE
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore VideoDownloader/VideoDownloader.csproj
+
+      - name: Build
+        run: dotnet build VideoDownloader/VideoDownloader.csproj -c Release -r win-x64 --no-restore
+
+      - name: Publish single-file self-contained EXE
+        run: |
+          dotnet publish VideoDownloader/VideoDownloader.csproj \
+            -c Release \
+            -r win-x64 \
+            --self-contained true \
+            -p:PublishSingleFile=true \
+            -p:PublishTrimmed=false \
+            -p:PublishReadyToRun=true \
+            -o ${{ runner.workspace }}/artifacts
+
+      - name: Download yt-dlp (optional helper)
+        run: |
+          curl -L -o "${{ runner.workspace }}/artifacts/yt-dlp.exe" \
+            https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe || echo "yt-dlp download failed (non-fatal)"
+
+      - name: List artifacts
+        run: dir ${{ runner.workspace }}/artifacts
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: VideoDownloader-windows-x64
+          path: ${{ runner.workspace }}/artifacts
