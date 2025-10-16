@@ -1,0 +1,12 @@
+bin/
+obj/
+*.user
+*.vs/
+.vscode/
+artifacts/
+*.exe
+*.pdb
+*.zip
+*.log
+# Rider/JetBrains
+.idea/
