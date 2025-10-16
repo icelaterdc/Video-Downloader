@@ -5,9 +5,15 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+
 jobs:
   build:
     runs-on: windows-latest
+    strategy:
+      matrix:
+        rid: [win-x64]
 
     steps:
       - name: Checkout repository
@@ -18,30 +24,31 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      - name: Restore dependencies
-        run: dotnet restore VideoDownloader/VideoDownloader.csproj
+      - name: Show dotnet info
+        run: dotnet --info
+
+      - name: Restore dependencies (with runtime)
+        run: dotnet restore VideoDownloader/VideoDownloader.csproj --runtime ${{ matrix.rid }}
 
       - name: Build
-        run: dotnet build VideoDownloader/VideoDownloader.csproj -c Release -r win-x64 --no-restore
+        run: dotnet build VideoDownloader/VideoDownloader.csproj -c Release -r ${{ matrix.rid }} --no-restore
 
       - name: Publish single-file self-contained EXE
         run: |
-          dotnet publish VideoDownloader/VideoDownloader.csproj \
-            -c Release \
-            -r win-x64 \
-            --self-contained true \
-            -p:PublishSingleFile=true \
-            -p:PublishTrimmed=false \
-            -p:PublishReadyToRun=true \
-            -o ${{ runner.workspace }}/artifacts
+          dotnet publish VideoDownloader/VideoDownloader.csproj -c Release -r ${{ matrix.rid }} --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -p:PublishReadyToRun=true -o "${{ runner.workspace }}\artifacts"
 
       - name: Download yt-dlp (optional helper)
+        shell: pwsh
         run: |
-          curl -L -o "${{ runner.workspace }}/artifacts/yt-dlp.exe" \
-            https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe || echo "yt-dlp download failed (non-fatal)"
+          $out = "${{ runner.workspace }}\artifacts\yt-dlp.exe"
+          try {
+            Invoke-WebRequest -Uri "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe" -OutFile $out -UseBasicParsing -ErrorAction Stop
+          } catch {
+            Write-Host "yt-dlp download failed (non-fatal): $($_.Exception.Message)"
+          }
 
       - name: List artifacts
-        run: dir ${{ runner.workspace }}/artifacts
+        run: dir "${{ runner.workspace }}\artifacts"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
