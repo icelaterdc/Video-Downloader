@@ -1,4 +1,3 @@
-```text
 # Video Downloader (Windows)
 
 Video Downloader is a simple, reliable, and user-friendly Windows desktop application (WinForms, .NET 8) for downloading videos from direct URLs and, optionally, from streaming sites via yt-dlp integration (planned). The project is developed incrementally — this repository contains the app skeleton and progressive improvements.
@@ -40,4 +39,3 @@ Notes about yt-dlp
 Privacy & Safety
 - The application only downloads the content from the URL the user provides. It does not phone home analytics or upload files anywhere.
 - For sites that require credentials or special handling, the app will surface warnings and rely on yt-dlp for secure handling where appropriate.
-```
